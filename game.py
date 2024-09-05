@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import math
@@ -5,30 +6,34 @@ import random
 import time
 
 import pygame
-from scripts.utils import load_image, load_images, Animation
-from scripts.entities import Player, Enemy, FastShootingEnemy
+from scripts.utils import load_image, load_images, Animation, DeviceDisconnectedError
+from scripts.entities import Player, Enemy, FastShootingEnemy, PowerUp
 from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
 from scripts.particle import Particle
 from scripts.spark import Spark
 
+PROGRESS_FILE = 'progress.json'
 
-class PowerUp(pygame.sprite.Sprite):
-    def __init__(self, x, y, image):
-        super().__init__()
-        # Redimensiona a imagem para 16x16 pixels
-        self.image = pygame.transform.scale(pygame.image.load(image), (16, 16))
-        self.rect = self.image.get_rect(topleft=(x, y))
 
-    def update(self, player):
-        # Verifica se o jogador colide com o powerup
-        if self.rect.colliderect(player.rect()):
-            player.activate_double_jump()  # Ativa o double jump no jogador
-            self.kill()  # Remove o powerup após a coleta
+def save_progress(level):
+    with open(PROGRESS_FILE, 'w') as f:
+        json.dump({'level': level}, f)
 
-    def render(self, surf, offset=(0, 0)):
-        # Renderiza o powerup na tela com base no deslocamento
-        surf.blit(self.image, (self.rect.x - offset[0], self.rect.y - offset[1]))
+
+def load_progress():
+    if os.path.exists(PROGRESS_FILE):
+        with open(PROGRESS_FILE, 'r') as f:
+            data = json.load(f)
+            return data.get('level', 0)
+    else:
+        save_progress(0)
+        return 0
+
+
+def check_devices():
+    if not pygame.key.get_focused() or not pygame.mouse.get_focused():
+        raise DeviceDisconnectedError("Teclado ou mouse desconectado!")
 
 
 class Game:
@@ -43,7 +48,6 @@ class Game:
 
         self._clock = pygame.time.Clock()
         self._movement = [False, False]
-        
         self._assets = {
             'decor': load_images('tiles/decor'),
             'grass': load_images('tiles/grass'),
@@ -65,30 +69,32 @@ class Game:
             'projectile': load_image('projectile.png'),
             'powerup': load_image('powerup.png')
         }
-        
+
         self._sfx = {
             'jump': pygame.mixer.Sound('data/sfx/jump.wav'),
             'dash': pygame.mixer.Sound('data/sfx/dash.wav'),
             'hit': pygame.mixer.Sound('data/sfx/hit.wav'),
             'shoot': pygame.mixer.Sound('data/sfx/shoot.wav'),
             'ambience': pygame.mixer.Sound('data/sfx/ambience.wav'),
+            'powerup': pygame.mixer.Sound('data/sfx/powerup.wav'),
         }
-        
+
         self._sfx['ambience'].set_volume(0.2)
         self._sfx['shoot'].set_volume(0.4)
         self._sfx['hit'].set_volume(0.8)
         self._sfx['dash'].set_volume(0.3)
         self._sfx['jump'].set_volume(0.7)
-        
+        self._sfx['powerup'].set_volume(0.8)
+
         self._clouds = Clouds(self._assets['clouds'], count=16)
-        
+
         self._player = Player(self, (50, 50), (8, 15))
-        
+
         self._tilemap = Tilemap(self, tile_size=16)
-        
-        self._level = 0
+
+        self._level = load_progress()
         self.load_level(self._level)
-        
+
         self._screenshake = 0
 
     def get_screen(self):
@@ -154,6 +160,13 @@ class Game:
     def set_dead(self, value):
         self._dead = value
 
+    def display_message(self, message):
+        font = pygame.font.SysFont(None, 55)
+        text = font.render(message, True, (255, 0, 0))
+        text_rect = text.get_rect(center=(self._screen.get_width() / 2, self._screen.get_height() / 2))
+        self._screen.blit(text, text_rect)
+        pygame.display.update()
+
     def load_level(self, map_id):
         self._tilemap.load('data/maps/' + str(map_id) + '.json')
 
@@ -191,104 +204,121 @@ class Game:
         self._sfx['ambience'].play(-1)
 
         while True:
-            self._display.fill((0, 0, 0, 0))
-            self._display_2.blit(self._assets['background'], (0, 0))
+            try:
+                self._display.fill((0, 0, 0, 0))
+                self._display_2.blit(self._assets['background'], (0, 0))
 
-            self._screenshake = max(0, self._screenshake - 1)
+                self._screenshake = max(0, self._screenshake - 1)
 
-            if not len(self._enemies):
-                self._transition += 1
-                if self._transition > 30:
-                    self._level = min(self._level + 1, len(os.listdir('data/maps')) - 1)
-                    self.load_level(self._level)
-            if self._transition < 0:
-                self._transition += 1
+                if not len(self._enemies):
+                    self._transition += 1
+                    if self._transition > 30:
+                        self._level = min(self._level + 1, len(os.listdir('data/maps')) - 1)
+                        self.load_level(self._level)
+                        save_progress(self._level)
 
-            if self._dead:
-                self._dead += 1
-                # Diminua o valor de _dead para 20, para que a fase reinicie mais rápido
-                if self._dead == 1:
-                    self._sfx['hit'].play()  # Tocar o som de morte assim que o jogador morre
-                if self._dead >= 0:  # Reinicia a fase mais rápido
-                    self._transition = min(30, self._transition + 1)
-                if self._dead > 30:
-                    self.load_level(self._level)
+                if self._transition < 0:
+                    self._transition += 1
 
-            self._scroll[0] += (self._player.rect().centerx - self._display.get_width() / 2 - self._scroll[0]) / 30
-            self._scroll[1] += (self._player.rect().centery - self._display.get_height() / 2 - self._scroll[1]) / 30
-            render_scroll = (int(self._scroll[0]), int(self._scroll[1]))
+                if self._dead:
+                    self._dead += 1
+                    # Diminua o valor de _dead para 20, para que a fase reinicie mais rápido
+                    if self._dead == 1:
+                        self._sfx['hit'].play()  # Tocar o som de morte assim que o jogador morre
+                    if self._dead >= 0:  # Reinicia a fase mais rápido
+                        self._transition = min(30, self._transition + 1)
+                    if self._dead > 30:
+                        self.load_level(self._level)
 
-            # Atualização do PowerUp
-            for powerup in self._powerups.copy():
-                powerup.update(self._player)  # Verifica se o player coleta o powerup
-                powerup.render(self._display, offset=render_scroll)  # Renderiza o powerup na tela
+                self._scroll[0] += (self._player.rect().centerx - self._display.get_width() / 2 - self._scroll[0]) / 30
+                self._scroll[1] += (self._player.rect().centery - self._display.get_height() / 2 - self._scroll[1]) / 30
+                render_scroll = (int(self._scroll[0]), int(self._scroll[1]))
 
-            # Atualizar e renderizar partículas
-            for particle in self._particles.copy():
-                if particle.update():
-                    self._particles.remove(particle)
-                particle.render(self._display, offset=render_scroll)
+                # Atualização do PowerUp
+                for powerup in self._powerups.copy():
+                    powerup.update(self._player)
+                    if powerup.collected:
+                        self._sfx['powerup'].play()
+                        self._powerups.remove(powerup)
+                    else:
+                        powerup.render(self._display, offset=render_scroll)
 
-            for spark in self._sparks.copy():
-                if spark.update():
-                    self._sparks.remove(spark)
-                spark.render(self._display, offset=render_scroll)
+                # Atualizar e renderizar partículas
+                for particle in self._particles.copy():
+                    if particle.update():
+                        self._particles.remove(particle)
+                    particle.render(self._display, offset=render_scroll)
 
-            # Atualizar e renderizar os projéteis
-            for projectile in self.get_projectiles().copy():
-                projectile[0][0] += projectile[1]  # Atualizar a posição do projétil
-                img = self.get_assets()['projectile']
-                self._display.blit(img, (projectile[0][0] - img.get_width() / 2 - render_scroll[0],
-                                        projectile[0][1] - img.get_height() / 2 - render_scroll[1]))
-                # Verificar se o projétil colidiu com o jogador
-                if self._player.rect().collidepoint(projectile[0]):
-                    self.set_dead(1)  # Marca o jogador como morto
-                    self.get_projectiles().remove(projectile)  # Remove o projétil após a colisão
-                # Verificar se o projétil colidiu com algo sólido ou está fora do alcance
-                elif self.get_tilemap().solid_check(projectile[0]) or projectile[2] > 360:
-                    self.get_projectiles().remove(projectile)
+                for spark in self._sparks.copy():
+                    if spark.update():
+                        self._sparks.remove(spark)
+                    spark.render(self._display, offset=render_scroll)
 
-            self._clouds.update()
-            self._clouds.render(self._display_2, offset=render_scroll)
+                # Atualizar e renderizar os projéteis
+                for projectile in self.get_projectiles().copy():
+                    projectile[0][0] += projectile[1]  # Atualizar a posição do projétil
+                    img = self.get_assets()['projectile']
+                    self._display.blit(img, (projectile[0][0] - img.get_width() / 2 - render_scroll[0],
+                                             projectile[0][1] - img.get_height() / 2 - render_scroll[1]))
+                    # Verificar se o projétil colidiu com o jogador
+                    if self._player.rect().collidepoint(projectile[0]):
+                        self.set_dead(1)  # Marca o jogador como morto
+                        self.get_projectiles().remove(projectile)  # Remove o projétil após a colisão
+                    # Verificar se o projétil colidiu com algo sólido ou está fora do alcance
+                    elif self.get_tilemap().solid_check(projectile[0]) or projectile[2] > 360:
+                        self.get_projectiles().remove(projectile)
 
-            self._tilemap.render(self._display, offset=render_scroll)
+                self._clouds.update()
+                self._clouds.render(self._display_2, offset=render_scroll)
 
-            for enemy in self._enemies.copy():
-                kill = enemy.update(self._tilemap, (0, 0))
-                enemy.render(self._display, offset=render_scroll)
-                if kill:
-                    self._enemies.remove(enemy)
+                self._tilemap.render(self._display, offset=render_scroll)
 
-            if not self._dead:
-                self._player.update(self._tilemap, (self._movement[1] - self._movement[0], 0))
-                self._player.render(self._display, offset=render_scroll)
+                for enemy in self._enemies.copy():
+                    kill = enemy.update(self._tilemap, (0, 0))
+                    enemy.render(self._display, offset=render_scroll)
+                    if kill:
+                        self._enemies.remove(enemy)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        self._movement[0] = True
-                    if event.key == pygame.K_RIGHT:
-                        self._movement[1] = True
-                    if event.key == pygame.K_UP:
-                        if self._player.jump():
-                            self._sfx['jump'].play()
-                    if event.key == pygame.K_x:
-                        self._player.dash()
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_LEFT:
-                        self._movement[0] = False
-                    if event.key == pygame.K_RIGHT:
-                        self._movement[1] = False
+                if not self._dead:
+                    self._player.update(self._tilemap, (self._movement[1] - self._movement[0], 0))
+                    self._player.render(self._display, offset=render_scroll)
 
-            self._display_2.blit(self._display, (0, 0))
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        save_progress(self._level)
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_LEFT:
+                            self._movement[0] = True
+                        if event.key == pygame.K_RIGHT:
+                            self._movement[1] = True
+                        if event.key == pygame.K_UP:
+                            if self._player.jump():
+                                self._sfx['jump'].play()
+                        if event.key == pygame.K_x:
+                            self._player.dash()
+                    if event.type == pygame.KEYUP:
+                        if event.key == pygame.K_LEFT:
+                            self._movement[0] = False
+                        if event.key == pygame.K_RIGHT:
+                            self._movement[1] = False
 
-            screenshake_offset = (random.random() * self._screenshake - self._screenshake / 2, random.random() * self._screenshake - self._screenshake / 2)
-            self._screen.blit(pygame.transform.scale(self._display_2, self._screen.get_size()), screenshake_offset)
-            pygame.display.update()
-            self._clock.tick(60)
+                self._display_2.blit(self._display, (0, 0))
+
+                screenshake_offset = (random.random() * self._screenshake - self._screenshake / 2,
+                                      random.random() * self._screenshake - self._screenshake / 2)
+                self._screen.blit(pygame.transform.scale(self._display_2, self._screen.get_size()), screenshake_offset)
+                pygame.display.update()
+                self._clock.tick(60)
+            except DeviceDisconnectedError as e:
+                while True:
+                    self.display_message(str(e) + " - Reconecte para continuar.")
+                    pygame.display.update()
+                    self._clock.tick(10)
+
+                    if pygame.key.get_focused() and pygame.mouse.get_focused():
+                        break
 
 
 Game().run()
