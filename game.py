@@ -1,9 +1,7 @@
 import json
 import os
 import sys
-import math
 import random
-import time
 
 import pygame
 from scripts.utils import load_image, load_images, Animation, DeviceDisconnectedError
@@ -40,7 +38,7 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.display.set_caption('ninja game')
-        pygame.mixer.init()  # Inicializa o mixer para carregar sons
+        pygame.mixer.init()  #inicializa o mixer para carregar sons
         self._screen = pygame.display.set_mode((640, 480))
         self._display = pygame.Surface((320, 240), pygame.SRCALPHA)
         self._display_2 = pygame.Surface((320, 240))
@@ -186,7 +184,7 @@ class Game:
                 else:  
                     self._enemies.append(FastShootingEnemy(self, spawner['pos'], (8, 15)))
 
-        # Configuração de outros elementos do nível (projetéis, powerups, etc.)
+        #configuração de outros elementos do nível (projetéis, powerups, etc.)
         self._powerups = [PowerUp(100, 150, 'data/images/powerup.png')]  # Coloque as coordenadas corretas do powerup
         self._projectiles = []
         self._particles = []
@@ -261,18 +259,16 @@ class Game:
 
 
 
-                # Atualizar e renderizar os projéteis
                 for projectile in self.get_projectiles().copy():
                     projectile[0][0] += projectile[1]  # Atualizar a posição do projétil
                     img = self.get_assets()['projectile']
                     self._display.blit(img, (projectile[0][0] - img.get_width() / 2 - render_scroll[0],
                                              projectile[0][1] - img.get_height() / 2 - render_scroll[1]))
-                    # Verificar se o projétil colidiu com o jogador
                     if self._player.rect().collidepoint(projectile[0]):
-                        self.set_dead(1)  # Marca o jogador como morto
-                        self._sfx['hit'].play()  # Tocar o som de morte assim que o jogador morre
-                        self.get_projectiles().remove(projectile)  # Remove o projétil após a colisão
-                    # Verificar se o projétil colidiu com algo sólido ou está fora do alcance
+                        self.set_dead(1)  #marca o jogador como morto
+                        self._sfx['hit'].play() 
+                        self.get_projectiles().remove(projectile)  
+
                     elif self.get_tilemap().solid_check(projectile[0]) or projectile[2] > 360:
                         self.get_projectiles().remove(projectile)
 

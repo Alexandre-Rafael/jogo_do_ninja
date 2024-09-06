@@ -7,28 +7,24 @@ class Cloud:
         self._speed = speed
         self._depth = depth
     
-    # Getters e Setters para 'pos'
     def get_pos(self):
         return self._pos
 
     def set_pos(self, value):
         self._pos = value
 
-    # Getters e Setters para 'img'
     def get_img(self):
         return self._img
 
     def set_img(self, value):
         self._img = value
 
-    # Getters e Setters para 'speed'
     def get_speed(self):
         return self._speed
 
     def set_speed(self, value):
         self._speed = value
 
-    # Getters e Setters para 'depth'
     def get_depth(self):
         return self._depth
 
