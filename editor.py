@@ -17,7 +17,7 @@ class Editor:
 
         self.clock = pygame.time.Clock()
         
-        self.assets = {
+        self._assets = {
             'decor': load_images('tiles/decor'),
             'grass': load_images('tiles/grass'),
             'large_decor': load_images('tiles/large_decor'),
@@ -36,7 +36,7 @@ class Editor:
         
         self.scroll = [0, 0]
         
-        self.tile_list = list(self.assets)
+        self.tile_list = list(self._assets)
         self.tile_group = 0
         self.tile_variant = 0
         
@@ -44,6 +44,9 @@ class Editor:
         self.right_clicking = False
         self.shift = False
         self.ongrid = True
+
+    def get_assets(self):
+        return self._assets
         
     def run(self):
         while True:
@@ -55,7 +58,7 @@ class Editor:
             
             self.tilemap.render(self.display, offset=render_scroll)
             
-            current_tile_img = self.assets[self.tile_list[self.tile_group]][self.tile_variant].copy()
+            current_tile_img = self._assets[self.tile_list[self.tile_group]][self.tile_variant].copy()
             current_tile_img.set_alpha(100)
             
             mpos = pygame.mouse.get_pos()
@@ -74,7 +77,7 @@ class Editor:
                 if tile_loc in self.tilemap.tilemap:
                     del self.tilemap.tilemap[tile_loc]
                 for tile in self.tilemap.offgrid_tiles.copy():
-                    tile_img = self.assets[tile['type']][tile['variant']]
+                    tile_img = self._assets[tile['type']][tile['variant']]
                     tile_r = pygame.Rect(tile['pos'][0] - self.scroll[0], tile['pos'][1] - self.scroll[1], tile_img.get_width(), tile_img.get_height())
                     if tile_r.collidepoint(mpos):
                         self.tilemap.offgrid_tiles.remove(tile)
@@ -95,9 +98,9 @@ class Editor:
                         self.right_clicking = True
                     if self.shift:
                         if event.button == 4:
-                            self.tile_variant = (self.tile_variant - 1) % len(self.assets[self.tile_list[self.tile_group]])
+                            self.tile_variant = (self.tile_variant - 1) % len(self._assets[self.tile_list[self.tile_group]])
                         if event.button == 5:
-                            self.tile_variant = (self.tile_variant + 1) % len(self.assets[self.tile_list[self.tile_group]])
+                            self.tile_variant = (self.tile_variant + 1) % len(self._assets[self.tile_list[self.tile_group]])
                     else:
                         if event.button == 4:
                             self.tile_group = (self.tile_group - 1) % len(self.tile_list)

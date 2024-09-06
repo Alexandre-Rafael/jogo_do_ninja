@@ -234,7 +234,7 @@ class Enemy(PhysicsEntity):
 class FastShootingEnemy(Enemy):
     def __init__(self, game, pos, size):
         super().__init__(game, pos, size)
-        self.shooting_interval = 3  # Intervalo de 0.1 segundo entre cada tiro
+        self.shooting_interval = 1.5  # Intervalo de 0.1 segundo entre cada tiro
         self.last_shot_time = time.time()  # Armazena o tempo do último tiro
 
     def update(self, tilemap, movement=(0, 0)):
