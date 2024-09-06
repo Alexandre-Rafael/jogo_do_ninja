@@ -180,10 +180,10 @@ class Game:
                 self._player.set_pos(spawner['pos'])
                 self._player.set_air_time(0)
             else:
-                # Condição para spawnar inimigos normais e rápidos juntos
-                if random.random() < 0.5:  # 50% de chance de ser inimigo normal
+                #spawnar inimigos normais e rápidos
+                if random.random() < 0.5:  
                     self._enemies.append(Enemy(self, spawner['pos'], (8, 15)))
-                else:  # 50% de chance de ser inimigo que atira mais rápido
+                else:  
                     self._enemies.append(FastShootingEnemy(self, spawner['pos'], (8, 15)))
 
         # Configuração de outros elementos do nível (projetéis, powerups, etc.)
@@ -199,7 +199,7 @@ class Game:
     def run(self):
         pygame.mixer.music.load('data/music.wav')
         pygame.mixer.music.set_volume(0.5)
-        pygame.mixer.music.play(-1)
+        pygame.mixer.music.play(-1) #loopmusica
 
         self._sfx['ambience'].play(-1)
 
@@ -224,8 +224,8 @@ class Game:
                     self._dead += 1
                     # Diminua o valor de _dead para 20, para que a fase reinicie mais rápido
                     if self._dead == 1:
-                        self._sfx['hit'].play()  # Tocar o som de morte assim que o jogador morre
-                    if self._dead >= 0:  # Reinicia a fase mais rápido
+                        self._sfx['hit'].play() 
+                    if self._dead >= 10:  # Reinicia a fase mais rápido
                         self._transition = min(30, self._transition + 1)
                     if self._dead > 30:
                         self.load_level(self._level)
@@ -243,6 +243,11 @@ class Game:
                     else:
                         powerup.render(self._display, offset=render_scroll)
 
+                display_mask = pygame.mask.from_surface(self._display)
+                display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 180), unsetcolor=(0, 0, 0, 0))
+                for offset in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    self._display_2.blit(display_sillhouette, offset)
+
                 # Atualizar e renderizar partículas
                 for particle in self._particles.copy():
                     if particle.update():
@@ -254,6 +259,8 @@ class Game:
                         self._sparks.remove(spark)
                     spark.render(self._display, offset=render_scroll)
 
+
+
                 # Atualizar e renderizar os projéteis
                 for projectile in self.get_projectiles().copy():
                     projectile[0][0] += projectile[1]  # Atualizar a posição do projétil
@@ -263,6 +270,7 @@ class Game:
                     # Verificar se o projétil colidiu com o jogador
                     if self._player.rect().collidepoint(projectile[0]):
                         self.set_dead(1)  # Marca o jogador como morto
+                        self._sfx['hit'].play()  # Tocar o som de morte assim que o jogador morre
                         self.get_projectiles().remove(projectile)  # Remove o projétil após a colisão
                     # Verificar se o projétil colidiu com algo sólido ou está fora do alcance
                     elif self.get_tilemap().solid_check(projectile[0]) or projectile[2] > 360:
@@ -304,13 +312,20 @@ class Game:
                         if event.key == pygame.K_RIGHT:
                             self._movement[1] = False
 
+                if self._transition:
+                    transition_surf = pygame.Surface(self._display.get_size())
+                    pygame.draw.circle(transition_surf, (255, 255, 255), (self._display.get_width() // 2, self._display.get_height() // 2), (30 - abs(self._transition)) * 8)
+                    transition_surf.set_colorkey((255, 255, 255))
+                    self._display.blit(transition_surf, (0, 0))
+
                 self._display_2.blit(self._display, (0, 0))
 
-                screenshake_offset = (random.random() * self._screenshake - self._screenshake / 2,
-                                      random.random() * self._screenshake - self._screenshake / 2)
+                screenshake_offset = (random.random() * self._screenshake - self._screenshake / 2, random.random() * self._screenshake - self._screenshake / 2)
                 self._screen.blit(pygame.transform.scale(self._display_2, self._screen.get_size()), screenshake_offset)
                 pygame.display.update()
                 self._clock.tick(60)
+
+
             except DeviceDisconnectedError as e:
                 while True:
                     self.display_message(str(e) + " - Reconecte para continuar.")
