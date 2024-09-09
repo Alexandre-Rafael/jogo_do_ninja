@@ -1,7 +1,7 @@
 import os
 import pygame
 
-BASE_IMG_PATH = 'data/images/'
+BASE_IMG_PATH = 'assets/images/'
 
 class ImageLoader:
     def __init__(self, base_path=BASE_IMG_PATH):

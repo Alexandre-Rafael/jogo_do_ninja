@@ -4,16 +4,16 @@ import random
 
 import pygame
 
-from scripts.check_devices.device_disconnected_error import DeviceDisconnectedError
-from scripts.clouds.multiple_clouds import MultipleClouds
-from scripts.entities.enemy import Enemy
-from scripts.entities.fast_shooting_enemy import FastShootingEnemy
-from scripts.entities.player import Player
-from scripts.map.animation import Animation
-from scripts.map.image_loader import ImageLoader
-from scripts.map.power_up import PowerUp
-from scripts.map.tilemap import Tilemap
-from scripts.save_progress.save_progress import SaveProgress
+from src.check_devices.device_disconnected_error import DeviceDisconnectedError
+from src.clouds.multiple_clouds import MultipleClouds
+from src.entities.enemy import Enemy
+from src.entities.fast_shooting_enemy import FastShootingEnemy
+from src.entities.player import Player
+from src.map.animation import Animation
+from src.map.image_loader import ImageLoader
+from src.map.power_up import PowerUp
+from src.map.tilemap import Tilemap
+from src.save_progress.save_progress import SaveProgress
 
 
 class Game:
@@ -64,12 +64,12 @@ class Game:
         }
 
         self._sfx = {
-            'jump': pygame.mixer.Sound('data/sfx/jump.wav'),
-            'dash': pygame.mixer.Sound('data/sfx/dash.wav'),
-            'hit': pygame.mixer.Sound('data/sfx/hit.wav'),
-            'shoot': pygame.mixer.Sound('data/sfx/shoot.wav'),
-            'ambience': pygame.mixer.Sound('data/sfx/ambience.wav'),
-            'powerup': pygame.mixer.Sound('data/sfx/powerup.wav'),
+            'jump': pygame.mixer.Sound('assets/sfx/jump.wav'),
+            'dash': pygame.mixer.Sound('assets/sfx/dash.wav'),
+            'hit': pygame.mixer.Sound('assets/sfx/hit.wav'),
+            'shoot': pygame.mixer.Sound('assets/sfx/shoot.wav'),
+            'ambience': pygame.mixer.Sound('assets/sfx/ambience.wav'),
+            'powerup': pygame.mixer.Sound('assets/sfx/powerup.wav'),
         }
 
         self._sfx['ambience'].set_volume(0.2)
@@ -162,7 +162,7 @@ class Game:
 
     def load_level(self, map_id):
         self.save_progress.save_progress(map_id)
-        self._tilemap.load('data/maps/' + str(map_id) + '.json')
+        self._tilemap.load('assets/maps/' + str(map_id) + '.json')
 
         self._leaf_spawners = []
         for tree in self._tilemap.extract([('large_decor', 2)], keep=True):
@@ -181,7 +181,7 @@ class Game:
                     self._enemies.append(FastShootingEnemy(self, spawner['pos'], (8, 15)))
 
         #configuração de outros elementos do nível (projetéis, powerups, etc.)
-        self._powerups = [PowerUp(100, 150, 'data/images/powerup.png')]  # Coloque as coordenadas corretas do powerup
+        self._powerups = [PowerUp(100, 150, 'assets/images/powerup.png')]  # Coloque as coordenadas corretas do powerup
         self._projectiles = []
         self._particles = []
         self._sparks = []
@@ -191,7 +191,7 @@ class Game:
         self._transition = -30
 
     def run(self):
-        pygame.mixer.music.load('data/music.wav')
+        pygame.mixer.music.load('assets/music.wav')
         pygame.mixer.music.set_volume(0.5)
         pygame.mixer.music.play(-1)  #loopmusica
 
@@ -207,7 +207,7 @@ class Game:
                 if not len(self._enemies):
                     self._transition += 1
                     if self._transition > 30:
-                        self._level = min(self._level + 1, len(os.listdir('data/maps')) - 1)
+                        self._level = min(self._level + 1, len(os.listdir('assets/maps')) - 1)
                         self.load_level(self._level)
                         self.save_progress.save_progress(self._level)
 

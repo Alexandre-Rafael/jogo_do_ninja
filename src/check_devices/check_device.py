@@ -1,5 +1,5 @@
 import pygame
-from scripts.check_devices.device_disconnected_error import DeviceDisconnectedError
+from src.check_devices.device_disconnected_error import DeviceDisconnectedError
 
 class CheckDevice:
     @staticmethod

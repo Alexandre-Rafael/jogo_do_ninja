@@ -2,8 +2,8 @@ import math
 import random
 import time
 
-from scripts.entities.physics_entity import PhysicsEntity
-from scripts.map.particle import Particle
+from src.entities.physics_entity import PhysicsEntity
+from src.map.particle import Particle
 
 
 class Player(PhysicsEntity):

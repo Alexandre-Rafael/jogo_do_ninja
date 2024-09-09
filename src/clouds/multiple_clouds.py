@@ -1,6 +1,6 @@
 import random
 
-from scripts.clouds.cloud import Cloud
+from src.clouds.cloud import Cloud
 
 
 class MultipleClouds:

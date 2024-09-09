@@ -1,5 +1,5 @@
 import time
-from scripts.entities.enemy import Enemy
+from src.entities.enemy import Enemy
 
 
 class FastShootingEnemy(Enemy):

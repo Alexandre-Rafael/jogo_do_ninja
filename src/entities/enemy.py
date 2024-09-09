@@ -2,9 +2,9 @@ import math
 import random
 
 import pygame
-from scripts.entities.physics_entity import PhysicsEntity
-from scripts.map.particle import Particle
-from scripts.map.spark import Spark
+from src.entities.physics_entity import PhysicsEntity
+from src.map.particle import Particle
+from src.map.spark import Spark
 
 
 class Enemy(PhysicsEntity):
