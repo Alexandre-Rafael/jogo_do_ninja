@@ -1,10 +1,14 @@
 from src.entities.game import Game
 
 
-def main():
-    game = Game()
-    game.run()
+class GameRunner:
+    def __init__(self):
+        self.game = Game()
+
+    def run(self):
+        self.game.run()
 
 
 if __name__ == '__main__':
-    main()
+    runner = GameRunner()
+    runner.run()

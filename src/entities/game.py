@@ -19,7 +19,7 @@ from src.save_progress.save_progress import SaveProgress
 class Game:
     def __init__(self):
         pygame.init()
-        pygame.display.set_caption('ninja game')
+        pygame.display.set_caption('Ninja Game')
         pygame.mixer.init()  #inicializa o mixer para carregar sons
         self._screen = pygame.display.set_mode((640, 480))
         self._display = pygame.Surface((320, 240), pygame.SRCALPHA)
@@ -51,6 +51,7 @@ class Game:
             'clouds': self.image_loader.load_images('clouds'),
             'enemy/idle': Animation(self.image_loader.load_images('entities/enemy/idle'), img_dur=6),
             'enemy/run': Animation(self.image_loader.load_images('entities/enemy/run'), img_dur=4),
+            'enemy/jump': Animation(self.image_loader.load_images('entities/enemy/jump'), img_dur=4),
             'player/idle': Animation(self.image_loader.load_images('entities/player/idle'), img_dur=6),
             'player/run': Animation(self.image_loader.load_images('entities/player/run'), img_dur=4),
             'player/jump': Animation(self.image_loader.load_images('entities/player/jump')),
@@ -84,9 +85,6 @@ class Game:
         self._player = Player(self, (50, 50), (8, 15))
 
         self._tilemap = Tilemap(self, tile_size=16)
-
-        # self._level = SaveProgress().load_progress()
-        # self.load_level(self._level)
 
         self._screenshake = 0
 

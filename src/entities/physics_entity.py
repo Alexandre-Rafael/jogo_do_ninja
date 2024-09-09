@@ -34,7 +34,7 @@ class PhysicsEntity:
         return self._pos
 
     def set_pos(self, value):
-        self._pos = value
+        self._pos = list(value)
 
     def get_size(self):
         return self._size
@@ -59,8 +59,11 @@ class PhysicsEntity:
 
     def set_action(self, action):
         if action != self._action:
-            self._action = action
-            self._animation = self._game.get_assets()[self._type + '/' + self._action].copy()
+            if self._type + '/' + action in self._game.get_assets():
+                self._action = action
+                self._animation = self._game.get_assets()[self._type + '/' + self._action].copy()
+            else:
+                print(f"Animação {self._type}/{action} não encontrada, mantendo a ação {self._action}")
 
     def get_anim_offset(self):
         return self._anim_offset
