@@ -330,6 +330,3 @@ class Game:
 
                     if pygame.key.get_focused() and pygame.mouse.get_focused():
                         break
-
-
-Game().run()
