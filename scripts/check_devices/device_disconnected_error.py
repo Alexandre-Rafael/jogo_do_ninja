@@ -1,0 +1,2 @@
+class DeviceDisconnectedError(Exception):
+    pass
